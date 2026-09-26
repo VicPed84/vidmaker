@@ -75,7 +75,7 @@ const envSchema = z.object({
 
   // Shotstack — optional, render/stitch disabled without it
   SHOTSTACK_API_KEY: optionalString,
-  SHOTSTACK_ENV: z.preprocess(emptyToUndefined, z.enum(["stage", "v1"]).default("stage")),
+  SHOTSTACK_ENV: z.preprocess(emptyToUndefined, z.enum(["stage", "v1"]).default("v1")),
 
   // Optional background music track (a public MP3 URL you have rights to)
   BACKGROUND_MUSIC_URL: optionalUrl,
