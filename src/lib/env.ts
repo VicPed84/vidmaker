@@ -70,7 +70,9 @@ const envSchema = z.object({
   HIGGSFIELD_CALLBACK: optionalUrl,
 
   // Vercel Blob — optional, stores voiceover audio so the renderer can
-  // fetch it
+  // fetch it. Newer stores connect with BLOB_STORE_ID (auth comes from
+  // Vercel's OIDC token at runtime); older ones use BLOB_READ_WRITE_TOKEN.
+  BLOB_STORE_ID: optionalString,
   BLOB_READ_WRITE_TOKEN: optionalString,
 
   // Shotstack — optional, render/stitch disabled without it
@@ -118,7 +120,7 @@ export const capabilities = {
   elevenlabs: Boolean(env.ELEVENLABS_API_KEY),
   pexels: Boolean(env.PEXELS_API_KEY),
   higgsfield: Boolean(env.HIGGSFIELD_API_KEY && env.HIGGSFIELD_SECRET),
-  blob: Boolean(env.BLOB_READ_WRITE_TOKEN),
+  blob: Boolean(env.BLOB_STORE_ID || env.BLOB_READ_WRITE_TOKEN),
   shotstack: Boolean(env.SHOTSTACK_API_KEY),
 } as const;
 

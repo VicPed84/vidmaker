@@ -4,7 +4,7 @@ const ITEMS = [
   { key: "aiGateway", label: "AI script writing", env: "AI_GATEWAY_API_KEY", required: false },
   { key: "elevenlabs", label: "Voiceover (ElevenLabs)", env: "ELEVENLABS_API_KEY", required: true },
   { key: "pexels", label: "Stock visuals (Pexels)", env: "PEXELS_API_KEY", required: true },
-  { key: "blob", label: "Audio storage (Vercel Blob)", env: "BLOB_READ_WRITE_TOKEN", required: true },
+  { key: "blob", label: "Audio storage (Vercel Blob)", env: "BLOB_STORE_ID", required: true },
   { key: "shotstack", label: "Rendering (Shotstack)", env: "SHOTSTACK_API_KEY", required: true },
 ] as const;
 
