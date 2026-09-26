@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---- Better Auth models (scaffolded/extended by the Better Auth CLI) ----
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Derived billing gate — the one field the whole app keys off
+  premiumUntil  DateTime?
+
+  sessions      Session[]
+  accounts      Account[]
+  videos        Video[]
+  usageMeters   UsageMeter[]
+  subscription  Subscription?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId        String
+  accountId         String
+  password          String?
+  accessToken       String?
+  refreshToken      String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+// ---- App models (5 of the 6-model budget's non-auth slots used) ----
+
+enum VideoStatus {
+  draft
+  voicing
+  broll_generating
+  rendering
+  ready
+  failed
+}
+
+model Video {
+  id                  String      @id @default(cuid())
+  userId              String
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  topic               String
+  script              String      @db.Text
+  status              VideoStatus @default(draft)
+
+  // ElevenLabs
+  elevenLabsAudioUrl  String?
+
+  // Higgsfield (Wan 3.0 Prime) — AI hero B-roll clips
+  higgsfieldJobId     String?
+
+  // Shotstack — render/stitch
+  shotstackRenderId   String?
+
+  videoUrl            String?
+  durationSec         Int?
+  generationCostCents Int         @default(0)
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model UsageMeter {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month           String   // "YYYY-MM"
+  videosGenerated Int      @default(0)
+
+  @@unique([userId, month])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String   @unique
+  stripeSubscriptionId String?  @unique
+  status               String   // Stripe's status string, mirrored as-is
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
