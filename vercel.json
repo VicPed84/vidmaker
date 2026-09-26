@@ -1,5 +1,5 @@
 {
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "buildCommand": "CHECKPOINT_DISABLE=1 prisma generate && CHECKPOINT_DISABLE=1 prisma migrate deploy && next build",
   "crons": [
     {
       "path": "/api/cron/poll-videos",

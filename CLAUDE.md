@@ -24,7 +24,7 @@ There is no formatter or test runner configured yet. Verify changes with `npm ru
 * `src/lib/db.ts` — the shared Prisma client (Neon adapter). Import `db` from here; never instantiate `PrismaClient` elsewhere.
 * `prisma/schema.prisma` — database schema. Change it, then run `npm run db:migrate`.
 * `src/generated/prisma/` — **generated code. Never edit by hand**; it is rebuilt by `prisma generate`.
-* `vercel.json` — build command (runs `prisma migrate deploy`) and the `/api/cron/poll-videos` cron (daily, Hobby-plan safe; open video pages poll status themselves).
+* `vercel.json` — build command (runs `prisma migrate deploy`; `CHECKPOINT_DISABLE=1` turns off Prisma's online update check, which crashed a Vercel build) and the `/api/cron/poll-videos` cron (daily, Hobby-plan safe; open video pages poll status themselves).
 * `src/features/auth/` — Better Auth server actions and forms. `src/lib/auth.ts` holds the config, `requireUser`, and the owner lock.
 * `src/features/videos/` — the core loop: `actions.ts` (Server Actions), `pipeline.ts` (produce + refresh), `timeline.ts` (scene timing, captions, Shotstack edit), `providers/` (one file per external API).
 * `.github/workflows/prisma-migrations.yml` — writes migration files on GitHub when `schema.prisma` changes (Prisma engine downloads are blocked in some sandboxes). Pull after pushing a schema change.
