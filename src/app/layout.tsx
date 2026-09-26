@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VidMaker Wedge",
-  description: "Script in, ready-to-post video out.",
+  title: { default: "VidMaker", template: "%s · VidMaker" },
+  description: "Type a topic, get a finished 60-second story Short.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }

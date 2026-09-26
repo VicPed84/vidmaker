@@ -1,34 +1,54 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
-@theme {
-  /* Color tokens — dark-first, consumed as bg-surface, text-ink, etc. */
-  --color-bg: #0a0a0b;
-  --color-surface: #141416;
-  --color-surface-raised: #1c1c1f;
-  --color-border: #2a2a2e;
-  --color-ink: #f2f2f0;
-  --color-ink-muted: #9a9a9f;
-  --color-accent: #ff5a3c;
-  --color-accent-ink: #0a0a0b;
-  --color-danger: #e5484d;
-  --color-success: #3ecf8e;
+/* Raw design tokens — every color in the app comes from here. */
+:root {
+  color-scheme: dark;
 
-  /* Typography */
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface-raised: #1c1c1f;
+  --border: #2a2a2e;
+  --ink: #f2f2f0;
+  --ink-muted: #9a9a9f;
+  --ink-faint: #5f5f66;
+  --accent: #ff5a3c;
+  --accent-hover: #ff7a61;
+  --accent-ink: #0a0a0b;
+  --danger: #e5484d;
+  --success: #3ecf8e;
+  --warning: #f5a524;
+}
+
+/* Tailwind theme tokens consume the raw tokens: bg-surface, text-ink, ... */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
-:root {
-  color-scheme: dark;
-}
-
 body {
-  background: var(--color-bg);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Numbers and metrics: mono with tabular numerals. */
 .font-tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

@@ -2,7 +2,7 @@
 
 ## 🎯 Project Profile
 * **Tech Stack:** Next.js 16 (App Router), React 19, TypeScript 5.x, Tailwind CSS 4, Prisma 7 + Neon PostgreSQL, Better Auth, Stripe, Resend, Zod, Vercel AI SDK. Deployed on Vercel.
-* **App Description:** VidMaker turns a topic into a finished short video: script → ElevenLabs voiceover → Higgsfield (Wan 3.0 Prime) AI B-roll → Shotstack render, gated by a Stripe subscription.
+* **App Description:** VidMaker turns a topic into a finished 60-second vertical Short: AI script (editable scenes) → ElevenLabs voiceover with timestamps → Pexels stock B-roll per scene → captions → Shotstack render. Currently a private tool locked to `OWNER_EMAILS`; Stripe billing is deferred. Higgsfield AI B-roll is planned, not wired.
 * **Core Philosophy:** Type safety, modular feature code, and graceful degradation — every optional provider is capability-flagged so a missing key disables that feature instead of crashing the app.
 
 ## 🛠️ Critical Commands
@@ -24,15 +24,18 @@ There is no formatter or test runner configured yet. Verify changes with `npm ru
 * `src/lib/db.ts` — the shared Prisma client (Neon adapter). Import `db` from here; never instantiate `PrismaClient` elsewhere.
 * `prisma/schema.prisma` — database schema. Change it, then run `npm run db:migrate`.
 * `src/generated/prisma/` — **generated code. Never edit by hand**; it is rebuilt by `prisma generate`.
-* `vercel.json` — build command and the `/api/cron/poll-videos` cron (every 2 minutes).
+* `vercel.json` — build command (runs `prisma migrate deploy`) and the `/api/cron/poll-videos` cron (daily, Hobby-plan safe; open video pages poll status themselves).
+* `src/features/auth/` — Better Auth server actions and forms. `src/lib/auth.ts` holds the config, `requireUser`, and the owner lock.
+* `src/features/videos/` — the core loop: `actions.ts` (Server Actions), `pipeline.ts` (produce + refresh), `timeline.ts` (scene timing, captions, Shotstack edit), `providers/` (one file per external API).
+* `.github/workflows/prisma-migrations.yml` — writes migration files on GitHub when `schema.prisma` changes (Prisma engine downloads are blocked in some sandboxes). Pull after pushing a schema change.
 * `.env.example` — every environment variable the app reads. Keep it in sync with `src/lib/env.ts`.
 
 ## 🔐 Environment & Providers
 * Read environment variables only through `env` from `@/lib/env`, never `process.env` directly.
-* Before calling an optional provider (Stripe, Resend, Higgsfield, ElevenLabs, Shotstack, AI Gateway, Google OAuth), check the matching flag in `capabilities` and return a clear "unavailable" state when it is off.
+* Before calling an optional provider (Stripe, Resend, Higgsfield, ElevenLabs, Pexels, Vercel Blob, Shotstack, AI Gateway, Google OAuth), check the matching flag in `capabilities` and return a clear "unavailable" state when it is off.
 * When adding a new variable, add it to both the Zod schema in `src/lib/env.ts` and `.env.example`.
 * Cron routes must verify `CRON_SECRET`.
-* Billing access is decided by `User.premiumUntil` — keep that the single source of truth for premium gating.
+* Studio access is decided by `hasStudioAccess` in `src/lib/auth.ts`: owner emails, then `User.premiumUntil`. Keep `premiumUntil` the single source of truth for premium gating once billing ships.
 
 ## 🎨 Code Style & Quality Standards
 Adhere strictly to these patterns. Do not deviate unless explicitly instructed.
@@ -48,7 +51,7 @@ Adhere strictly to these patterns. Do not deviate unless explicitly instructed.
 
 ### UI & Styling
 * **Tailwind:** This is Tailwind v4 (CSS-first config in `src/app/globals.css`). Use utility classes directly and the theme tokens defined there (e.g., `text-(--color-ink)`). Avoid arbitrary pixel values (`h-[432px]`) — rely on the standard spacing scale.
-* **Components:** Build accessible (ARIA-compliant) components. Prioritize Shadcn/Radix primitives if they are installed (they are not yet).
+* **Components:** Build accessible (ARIA-compliant) components. Small hand-rolled primitives live in `src/components/ui/`; no component libraries (no shadcn/ui).
 
 ## 🔄 Cognitive Workflow Rules
 When working in this codebase, you must follow this mental model:

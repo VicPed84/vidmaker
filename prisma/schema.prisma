@@ -7,13 +7,13 @@ datasource db {
   provider = "postgresql"
 }
 
-// ---- Better Auth models (scaffolded/extended by the Better Auth CLI) ----
+// ---- Better Auth models (field set matches the Better Auth core schema) ----
 
 model User {
   id            String    @id @default(cuid())
+  name          String
   email         String    @unique
   emailVerified Boolean   @default(false)
-  name          String?
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -26,6 +26,8 @@ model User {
   videos        Video[]
   usageMeters   UsageMeter[]
   subscription  Subscription?
+
+  @@map("user")
 }
 
 model Session {
@@ -37,23 +39,31 @@ model Session {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
 }
 
 model Account {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId        String
-  accountId         String
-  password          String?
-  accessToken       String?
-  refreshToken      String?
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId            String
+  accountId             String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  scope                 String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
 }
 
 model Verification {
@@ -62,32 +72,42 @@ model Verification {
   value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
-// ---- App models (5 of the 6-model budget's non-auth slots used) ----
+// ---- App models ----
 
 enum VideoStatus {
-  draft
-  voicing
-  broll_generating
-  rendering
+  draft // script written, waiting for approval
+  voicing // generating narration
+  broll_generating // picking visuals for each scene
+  rendering // Shotstack is stitching the MP4
   ready
   failed
 }
 
+/// One 60-second vertical Short: the artifact the whole app exists to make.
 model Video {
   id                  String      @id @default(cuid())
   userId              String
   user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   topic               String
-  script              String      @db.Text
+  // Upload metadata suggested with the script
+  title               String      @default("")
+  description         String      @default("") @db.Text
+  // Scene[] — see src/features/videos/scenes.ts for the shape
+  scenes              Json
   status              VideoStatus @default(draft)
+  errorMessage        String?
 
-  // ElevenLabs
+  // ElevenLabs narration, stored on Vercel Blob
   elevenLabsAudioUrl  String?
 
-  // Higgsfield (Wan 3.0 Prime) — AI hero B-roll clips
+  // Higgsfield (Wan 3.0 Prime) — AI hero B-roll clips (not wired yet)
   higgsfieldJobId     String?
 
   // Shotstack — render/stitch
@@ -101,6 +121,7 @@ model Video {
   updatedAt           DateTime    @updatedAt
 
   @@index([userId, createdAt])
+  @@index([status])
 }
 
 model UsageMeter {
