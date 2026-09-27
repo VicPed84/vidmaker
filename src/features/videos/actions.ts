@@ -96,7 +96,9 @@ export async function createVideoAction(
     }
   } catch (error: unknown) {
     console.error("Script generation failed", error);
-    return { error: "Couldn't write the script. Try again, or reword the topic." };
+    // Private tool: show the real reason so setup problems are easy to fix.
+    const detail = error instanceof Error ? error.message : String(error);
+    return { error: `Couldn't write the script: ${detail.slice(0, 300)}` };
   }
 
   revalidatePath("/studio");

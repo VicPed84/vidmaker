@@ -20,8 +20,7 @@ const generatedScriptSchema = z.object({
           ),
       })
     )
-    .min(5)
-    .max(9),
+    .describe("6-8 scenes"),
 });
 
 export type GeneratedScript = z.infer<typeof generatedScriptSchema>;
@@ -48,5 +47,8 @@ export async function generateScript(topic: string): Promise<GeneratedScript> {
     prompt: `Topic: ${topic}`,
   });
 
-  return object;
+  if (object.scenes.length === 0) {
+    throw new Error("The AI returned a script with no scenes. Try again.");
+  }
+  return { ...object, scenes: object.scenes.slice(0, 12) };
 }
