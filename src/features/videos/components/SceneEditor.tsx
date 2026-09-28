@@ -43,7 +43,7 @@ export function SceneEditor({ videoId, initial, readOnly, canProduce, produceLab
   const problem = scriptProblem(script.scenes);
   const busy = saving || producing;
 
-  function updateScene(index: number, field: "narration" | "searchQuery", value: string) {
+  function updateScene(index: number, field: "narration" | "visual", value: string) {
     setScript((prev) => ({
       ...prev,
       scenes: prev.scenes.map((scene, i) => (i === index ? { ...scene, [field]: value } : scene)),
@@ -53,7 +53,7 @@ export function SceneEditor({ videoId, initial, readOnly, canProduce, produceLab
   function addScene(after: number) {
     setScript((prev) => {
       const scenes = [...prev.scenes];
-      scenes.splice(after + 1, 0, { narration: "", searchQuery: "" });
+      scenes.splice(after + 1, 0, { narration: "", visual: "" });
       return { ...prev, scenes };
     });
   }
@@ -133,18 +133,16 @@ export function SceneEditor({ videoId, initial, readOnly, canProduce, produceLab
                 placeholder="What the voice says during this scene."
                 onChange={(e) => updateScene(i, "narration", e.target.value)}
               />
-              <label className="flex flex-col gap-1.5">
-                <span className="font-mono text-xs uppercase tracking-wider text-ink-muted">
-                  Visual search
-                </span>
-                <input
-                  value={scene.searchQuery}
-                  readOnly={readOnly}
-                  placeholder="e.g. foggy harbor night"
-                  onChange={(e) => updateScene(i, "searchQuery", e.target.value)}
-                  className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-accent/40"
-                />
-              </label>
+              <TextArea
+                label="Visual"
+                name={`visual-${i}`}
+                rows={2}
+                value={scene.visual}
+                readOnly={readOnly}
+                maxLength={500}
+                placeholder="What the viewer sees, e.g. a lighthouse keeper staring at a stormy sea at night"
+                onChange={(e) => updateScene(i, "visual", e.target.value)}
+              />
             </div>
           </li>
         ))}

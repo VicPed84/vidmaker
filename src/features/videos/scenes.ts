@@ -7,9 +7,11 @@ export const MAX_SCENES = 12;
 
 export const sceneSchema = z.object({
   narration: z.string().trim().max(600),
-  // Short, concrete stock-footage search, e.g. "stormy ocean night"
-  searchQuery: z.string().trim().max(80),
-  // Filled in during production
+  // What the viewer sees: a vivid image description (AI images) that also
+  // works as a stock-footage search when AI images are off
+  visual: z.string().trim().max(500),
+  // Filled in during production: an AI image, or a stock clip
+  imageUrl: z.string().url().optional(),
   clipUrl: z.string().url().optional(),
   clipDurationSec: z.number().positive().optional(),
   start: z.number().nonnegative().optional(),
@@ -25,16 +27,28 @@ export const scriptInputSchema = z.object({
   title: z.string().trim().max(100),
   description: z.string().trim().max(2000),
   scenes: z
-    .array(sceneSchema.pick({ narration: true, searchQuery: true }))
+    .array(sceneSchema.pick({ narration: true, visual: true }))
     .min(1, "Add at least one scene.")
     .max(MAX_SCENES, `Keep it to ${MAX_SCENES} scenes or fewer.`),
 });
 
 export type ScriptInput = z.infer<typeof scriptInputSchema>;
 
+/** Older videos stored the visual as `searchQuery`. */
+function withLegacyFields(value: unknown): unknown {
+  if (!Array.isArray(value)) return value;
+  return value.map((scene: unknown) => {
+    if (scene && typeof scene === "object" && !("visual" in scene) && "searchQuery" in scene) {
+      const { searchQuery, ...rest } = scene as Record<string, unknown>;
+      return { ...rest, visual: searchQuery };
+    }
+    return scene;
+  });
+}
+
 /** Safely read the JSON column; bad data becomes an empty list. */
 export function parseScenes(value: unknown): Scene[] {
-  const parsed = scenesSchema.safeParse(value);
+  const parsed = scenesSchema.safeParse(withLegacyFields(value));
   return parsed.success ? parsed.data : [];
 }
 
@@ -49,12 +63,12 @@ export function estimateSeconds(scenes: Pick<Scene, "narration">[]): number {
 }
 
 /** Why a script can't be produced yet, or null if it's ready. */
-export function scriptProblem(scenes: Pick<Scene, "narration" | "searchQuery">[]): string | null {
+export function scriptProblem(scenes: Pick<Scene, "narration" | "visual">[]): string | null {
   if (scenes.length === 0) return "Add at least one scene.";
   const emptyNarration = scenes.findIndex((scene) => !scene.narration.trim());
   if (emptyNarration !== -1) return `Scene ${emptyNarration + 1} has no narration.`;
-  const emptyQuery = scenes.findIndex((scene) => !scene.searchQuery.trim());
-  if (emptyQuery !== -1) return `Scene ${emptyQuery + 1} needs a visual search.`;
+  const emptyQuery = scenes.findIndex((scene) => !scene.visual.trim());
+  if (emptyQuery !== -1) return `Scene ${emptyQuery + 1} needs a visual description.`;
   const seconds = estimateSeconds(scenes);
   if (seconds > 75) return `About ${seconds}s of narration. Trim it under 75s for a Short.`;
   return null;

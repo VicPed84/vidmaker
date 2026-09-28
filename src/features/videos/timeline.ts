@@ -1,6 +1,10 @@
 import type { Scene } from "@/features/videos/scenes";
 import type { CharacterAlignment } from "@/features/videos/providers/elevenlabs";
-import type { ShotstackClip, ShotstackEdit } from "@/features/videos/providers/shotstack";
+import type {
+  MotionEffect,
+  ShotstackClip,
+  ShotstackEdit,
+} from "@/features/videos/providers/shotstack";
 
 /** Narration is sent to TTS as the scene lines joined by this separator. */
 export const SCENE_SEPARATOR = " ";
@@ -105,11 +109,31 @@ export function captionClips(alignment: CharacterAlignment): ShotstackClip[] {
   return clips;
 }
 
-/** Visual clips; a stock clip shorter than its scene is repeated to fill it. */
+/** Rotating camera moves so consecutive stills don't feel the same. */
+const MOTION: MotionEffect[] = ["zoomIn", "slideLeft", "zoomOut", "slideRight", "zoomIn", "slideUp"];
+
+/**
+ * Visual clips. AI images get a slow pan/zoom and a short crossfade; a stock
+ * clip shorter than its scene is repeated to fill it.
+ */
 function visualClips(scenes: Scene[]): ShotstackClip[] {
   const clips: ShotstackClip[] = [];
-  for (const scene of scenes) {
-    if (!scene.clipUrl || scene.start === undefined || !scene.length) continue;
+  scenes.forEach((scene, index) => {
+    if (scene.start === undefined || !scene.length) return;
+
+    if (scene.imageUrl) {
+      clips.push({
+        asset: { type: "image", src: scene.imageUrl },
+        start: round(scene.start),
+        length: round(scene.length),
+        fit: "cover",
+        effect: MOTION[index % MOTION.length],
+        ...(index > 0 ? { transition: { in: "fade" as const } } : {}),
+      });
+      return;
+    }
+
+    if (!scene.clipUrl) return;
     const sourceLength = scene.clipDurationSec ?? scene.length;
     let placed = 0;
     while (placed < scene.length - 0.01) {
@@ -122,7 +146,7 @@ function visualClips(scenes: Scene[]): ShotstackClip[] {
       });
       placed += length;
     }
-  }
+  });
   return clips;
 }
 

@@ -45,7 +45,7 @@ function parseScript(formData: FormData): ScriptInput | string {
 function scenesJson(script: ScriptInput): Prisma.InputJsonValue {
   return script.scenes.map((scene) => ({
     narration: scene.narration,
-    searchQuery: scene.searchQuery,
+    visual: scene.visual,
   }));
 }
 
@@ -89,7 +89,7 @@ export async function createVideoAction(
           userId: user.id,
           topic: topic.data,
           title: topic.data.slice(0, 100),
-          scenes: [{ narration: "", searchQuery: "" }],
+          scenes: [{ narration: "", visual: "" }],
         },
       });
       videoId = video.id;

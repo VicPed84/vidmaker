@@ -103,7 +103,7 @@ export default async function VideoPage({ params }: { params: Promise<{ id: stri
         initial={{
           title: video.title,
           description: video.description,
-          scenes: scenes.map((s) => ({ narration: s.narration, searchQuery: s.searchQuery })),
+          scenes: scenes.map((s) => ({ narration: s.narration, visual: s.visual })),
         }}
       />
 

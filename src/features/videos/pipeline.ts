@@ -1,11 +1,12 @@
 import "server-only";
 import type { Video } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { env, visualSource } from "@/lib/env";
 import { parseScenes, type Scene } from "@/features/videos/scenes";
 import { synthesizeNarration } from "@/features/videos/providers/elevenlabs";
 import { findClip } from "@/features/videos/providers/pexels";
-import { uploadNarration } from "@/features/videos/providers/storage";
+import { generateSceneImage } from "@/features/videos/providers/images";
+import { uploadNarration, uploadSceneImage } from "@/features/videos/providers/storage";
 import { getRenderStatus, submitRender } from "@/features/videos/providers/shotstack";
 import { buildEdit, joinNarration, timeScenes } from "@/features/videos/timeline";
 
@@ -34,6 +35,47 @@ async function markFailed(videoId: string, error: unknown): Promise<void> {
   }
 }
 
+/** How many images to generate at once (keeps within provider rate limits). */
+const IMAGE_CONCURRENCY = 4;
+
+async function addVisuals(videoId: string, scenes: Scene[]): Promise<Scene[]> {
+  if (visualSource === "ai-images") {
+    const result: Scene[] = [...scenes];
+    for (let start = 0; start < scenes.length; start += IMAGE_CONCURRENCY) {
+      const batch = scenes.slice(start, start + IMAGE_CONCURRENCY);
+      const urls = await Promise.all(
+        batch.map(async (scene, offset) => {
+          const index = start + offset;
+          try {
+            const image = await generateSceneImage(scene.visual);
+            return await uploadSceneImage(videoId, index, image.data, image.mediaType);
+          } catch (error: unknown) {
+            const reason = error instanceof Error ? error.message : String(error);
+            throw new Error(`Scene ${index + 1} image failed: ${reason}`);
+          }
+        })
+      );
+      urls.forEach((url, offset) => {
+        const scene = result[start + offset];
+        if (scene) result[start + offset] = { ...scene, imageUrl: url, clipUrl: undefined };
+      });
+    }
+    return result;
+  }
+
+  if (visualSource === "stock") {
+    const used = new Set<string>();
+    const result: Scene[] = [];
+    for (const scene of scenes) {
+      const clip = await findClip(scene.visual, scene.length ?? 3, used);
+      result.push({ ...scene, clipUrl: clip.url, clipDurationSec: clip.durationSec, imageUrl: undefined });
+    }
+    return result;
+  }
+
+  throw new Error("No visual source is set up. Add AI_GATEWAY_API_KEY or PEXELS_API_KEY.");
+}
+
 /**
  * Voice → visuals → render submission. Runs after the "Make video" action
  * responds; the page polls for progress. Never throws: failures are written
@@ -58,18 +100,13 @@ export async function produceVideo(videoId: string): Promise<void> {
       },
     });
 
-    // 2. One stock clip per scene, no repeats within a video
-    const used = new Set<string>();
-    const withClips: Scene[] = [];
-    for (const scene of timed) {
-      const clip = await findClip(scene.searchQuery, scene.length ?? 3, used);
-      withClips.push({ ...scene, clipUrl: clip.url, clipDurationSec: clip.durationSec });
-    }
+    // 2. One visual per scene: AI illustrations, or stock clips as a fallback
+    const withVisuals = await addVisuals(video.id, timed);
 
     // 3. Hand the whole edit to Shotstack
     const renderId = await submitRender(
       buildEdit({
-        scenes: withClips,
+        scenes: withVisuals,
         alignment: narration.alignment,
         audioUrl,
         audioDurationSec: narration.durationSec,
@@ -80,7 +117,7 @@ export async function produceVideo(videoId: string): Promise<void> {
     await db.$transaction([
       db.video.update({
         where: { id: video.id },
-        data: { status: "rendering", shotstackRenderId: renderId, scenes: withClips },
+        data: { status: "rendering", shotstackRenderId: renderId, scenes: withVisuals },
       }),
       db.usageMeter.upsert({
         where: { userId_month: { userId: video.userId, month: currentMonth() } },

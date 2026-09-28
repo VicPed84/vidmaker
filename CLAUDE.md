@@ -2,7 +2,7 @@
 
 ## 🎯 Project Profile
 * **Tech Stack:** Next.js 16 (App Router), React 19, TypeScript 5.x, Tailwind CSS 4, Prisma 7 + Neon PostgreSQL, Better Auth, Stripe, Resend, Zod, Vercel AI SDK. Deployed on Vercel.
-* **App Description:** VidMaker turns a topic into a finished 60-second vertical Short: AI script (editable scenes) → ElevenLabs voiceover with timestamps → Pexels stock B-roll per scene → captions → Shotstack render. Currently a private tool locked to `OWNER_EMAILS`; Stripe billing is deferred. Higgsfield AI B-roll is planned, not wired.
+* **App Description:** VidMaker turns a topic into a finished 60-second vertical Short: AI script (editable scenes) → ElevenLabs voiceover with timestamps → one AI illustration per scene via AI Gateway (`IMAGE_MODEL`, pan/zoom motion; Pexels stock footage is the fallback when the gateway is off) → captions → Shotstack render. Currently a private tool locked to `OWNER_EMAILS`; Stripe billing is deferred. Higgsfield AI B-roll is planned, not wired. OpenArt has no public REST API (MCP/CLI with personal OAuth only), so it can't be used from the server.
 * **Core Philosophy:** Type safety, modular feature code, and graceful degradation — every optional provider is capability-flagged so a missing key disables that feature instead of crashing the app.
 
 ## 🛠️ Critical Commands

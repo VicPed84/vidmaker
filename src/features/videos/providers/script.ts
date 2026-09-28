@@ -13,10 +13,10 @@ const generatedScriptSchema = z.object({
     .array(
       z.object({
         narration: z.string().describe("One or two spoken sentences for this scene"),
-        searchQuery: z
+        visual: z
           .string()
           .describe(
-            "2-4 word stock-footage search for the visual, concrete and filmable, no names of real people, e.g. 'foggy harbor night'"
+            "One-sentence image description for this scene: subject, setting, era, mood and camera angle, specific to the story (e.g. 'Napoleon in a green coat on a muddy field at dusk, dozens of rabbits rushing toward his boots, low angle'). No text or captions in the image."
           ),
       })
     )
@@ -42,7 +42,7 @@ export async function generateScript(topic: string): Promise<GeneratedScript> {
       "Open with a hook in the first sentence that makes the viewer need the ending. Build tension, then pay it off. End with a line that invites a comment or rewatch.",
       "Write for the ear: short sentences, plain words, no stage directions, no emojis, no hashtags in the narration.",
       "Use only well-documented facts. If a detail is uncertain or disputed, leave it out or say it is disputed. Never invent names, dates, quotes or numbers.",
-      "Split the narration into 6-8 scenes; each scene gets one visual that can be found in stock footage.",
+      "Split the narration into 6-8 scenes; each scene gets one illustration. Describe visuals concretely and keep characters, clothing and era consistent from scene to scene.",
     ].join("\n"),
     prompt: `Topic: ${topic}`,
   });

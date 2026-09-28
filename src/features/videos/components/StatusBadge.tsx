@@ -3,7 +3,7 @@ import type { VideoStatus } from "@/generated/prisma/client";
 export const STATUS_LABEL: Record<VideoStatus, string> = {
   draft: "Script draft",
   voicing: "Recording voice",
-  broll_generating: "Finding visuals",
+  broll_generating: "Creating visuals",
   rendering: "Rendering",
   ready: "Ready",
   failed: "Failed",

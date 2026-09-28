@@ -4,11 +4,14 @@ import { capabilities, env } from "@/lib/env";
 
 // Minimal slice of the Shotstack Edit API we use.
 type VideoAsset = { type: "video"; src: string; volume: number };
+type ImageAsset = { type: "image"; src: string };
 type AudioAsset = { type: "audio"; src: string; volume: number };
 type TitleAsset = { type: "title"; text: string; style: "subtitle"; size: "medium" };
 
+export type MotionEffect = "zoomIn" | "zoomOut" | "slideLeft" | "slideRight" | "slideUp" | "slideDown";
+
 export type ShotstackClip = {
-  asset: VideoAsset | AudioAsset | TitleAsset;
+  asset: VideoAsset | ImageAsset | AudioAsset | TitleAsset;
   start: number;
   length: number;
   fit?: "cover";
@@ -16,6 +19,8 @@ export type ShotstackClip = {
   offset?: { x: number; y: number };
   trim?: number;
   transition?: { in?: "fade"; out?: "fade" };
+  // Slow pan/zoom ("Ken Burns") motion for still images
+  effect?: MotionEffect;
 };
 
 export type ShotstackEdit = {

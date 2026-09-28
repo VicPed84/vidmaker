@@ -55,13 +55,15 @@ const envSchema = z.object({
   // Vercel AI Gateway — optional, script generation disabled without it
   AI_GATEWAY_API_KEY: optionalString,
   SCRIPT_MODEL: stringWithDefault("openai/gpt-5-mini"),
+  // Image model for scene illustrations (any AI Gateway image model)
+  IMAGE_MODEL: stringWithDefault("bfl/flux-2-pro"),
 
   // ElevenLabs — optional, voiceover disabled without it
   ELEVENLABS_API_KEY: optionalString,
   // Default: "George", one of ElevenLabs' premade narrator voices
   ELEVENLABS_VOICE_ID: stringWithDefault("JBFqnCBsd6RMkjVDRZzb"),
 
-  // Pexels — optional, stock B-roll disabled without it
+  // Pexels — optional fallback: stock B-roll when AI images are off
   PEXELS_API_KEY: optionalString,
 
   // Higgsfield (Wan 3.0 Prime) — optional, reserved for AI B-roll
@@ -124,9 +126,16 @@ export const capabilities = {
   shotstack: Boolean(env.SHOTSTACK_API_KEY),
 } as const;
 
+/** Scene visuals: AI images through the gateway, else Pexels stock footage. */
+export const visualSource: "ai-images" | "stock" | null = capabilities.aiGateway
+  ? "ai-images"
+  : capabilities.pexels
+    ? "stock"
+    : null;
+
 /** Everything the "produce video" step needs, in one check. */
 export const canProduceVideos =
   capabilities.elevenlabs &&
-  capabilities.pexels &&
   capabilities.blob &&
-  capabilities.shotstack;
+  capabilities.shotstack &&
+  visualSource !== null;
