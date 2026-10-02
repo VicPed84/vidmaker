@@ -27,7 +27,7 @@ export default async function StudioPage() {
             </p>
           </div>
         </div>
-        <NewVideoForm aiEnabled={capabilities.aiGateway} />
+        <NewVideoForm aiEnabled={capabilities.scriptAi} />
         {!canProduceVideos ? <SetupChecklist /> : null}
       </section>
 

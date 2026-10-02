@@ -39,7 +39,7 @@ export function NewVideoForm({ aiEnabled }: { aiEnabled: boolean }) {
       <p className="text-xs text-ink-muted">
         {aiEnabled
           ? "You'll get a ~60s script split into scenes. Review it, then make the video."
-          : "AI script writing is off (no AI_GATEWAY_API_KEY), so you'll write the scenes yourself."}
+          : "AI script writing is off (no GEMINI_API_KEY or other AI key), so you'll write the scenes yourself."}
       </p>
     </form>
   );

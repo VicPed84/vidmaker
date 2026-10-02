@@ -20,6 +20,35 @@ const optionalUrl = z.preprocess(
   z.string().url().optional()
 );
 
+/** Text (script) providers, in the default order they are tried. */
+export const TEXT_PROVIDER_IDS = [
+  "gateway",
+  "gemini",
+  "groq",
+  "cerebras",
+  "mistral",
+  "openrouter",
+] as const;
+export type TextProviderId = (typeof TEXT_PROVIDER_IDS)[number];
+
+// Comma-separated provider names; duplicates are dropped, unknown names fail
+// the boot so a typo never silently disables a fallback.
+const textProviderOrder = z.preprocess(
+  emptyToUndefined,
+  z
+    .string()
+    .default(TEXT_PROVIDER_IDS.join(","))
+    .transform((raw) => [
+      ...new Set(
+        raw
+          .split(",")
+          .map((name) => name.trim().toLowerCase())
+          .filter(Boolean)
+      ),
+    ])
+    .pipe(z.array(z.enum(TEXT_PROVIDER_IDS)).min(1))
+);
+
 const envSchema = z.object({
   // Core — required
   DATABASE_URL: z.string().url(),
@@ -52,7 +81,23 @@ const envSchema = z.object({
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: stringWithDefault("VidMaker <onboarding@resend.dev>"),
 
-  // Vercel AI Gateway — optional, script generation disabled without it
+  // Script writing — optional. Any one of the keys below turns it on; with
+  // several set they are tried in TEXT_PROVIDER_ORDER, falling through on a
+  // rate limit or error.
+  TEXT_PROVIDER_ORDER: textProviderOrder,
+  // Free-tier, OpenAI-compatible providers
+  GEMINI_API_KEY: optionalString,
+  GEMINI_MODEL: stringWithDefault("gemini-3.6-flash"),
+  GROQ_API_KEY: optionalString,
+  GROQ_MODEL: stringWithDefault("llama-3.3-70b-versatile"),
+  CEREBRAS_API_KEY: optionalString,
+  CEREBRAS_MODEL: stringWithDefault("gpt-oss-120b"),
+  MISTRAL_API_KEY: optionalString,
+  MISTRAL_MODEL: stringWithDefault("mistral-small-latest"),
+  OPENROUTER_API_KEY: optionalString,
+  OPENROUTER_MODEL: stringWithDefault("openrouter/free"),
+
+  // Vercel AI Gateway — optional; scene images need it, scripts can use it
   AI_GATEWAY_API_KEY: optionalString,
   SCRIPT_MODEL: stringWithDefault("openai/gpt-5-mini"),
   // Image model for scene illustrations (any AI Gateway image model)
@@ -119,6 +164,15 @@ export const capabilities = {
   stripe: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET),
   email: Boolean(env.RESEND_API_KEY),
   aiGateway: Boolean(env.AI_GATEWAY_API_KEY),
+  // Script writing: the gateway or any free text provider
+  scriptAi: Boolean(
+    env.AI_GATEWAY_API_KEY ||
+      env.GEMINI_API_KEY ||
+      env.GROQ_API_KEY ||
+      env.CEREBRAS_API_KEY ||
+      env.MISTRAL_API_KEY ||
+      env.OPENROUTER_API_KEY
+  ),
   elevenlabs: Boolean(env.ELEVENLABS_API_KEY),
   pexels: Boolean(env.PEXELS_API_KEY),
   higgsfield: Boolean(env.HIGGSFIELD_API_KEY && env.HIGGSFIELD_SECRET),

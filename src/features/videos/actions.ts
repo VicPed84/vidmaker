@@ -70,7 +70,7 @@ export async function createVideoAction(
 
   let videoId: string;
   try {
-    if (capabilities.aiGateway) {
+    if (capabilities.scriptAi) {
       const script = await generateScript(topic.data);
       const video = await db.video.create({
         data: {

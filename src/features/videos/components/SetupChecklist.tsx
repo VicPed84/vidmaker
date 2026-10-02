@@ -1,7 +1,8 @@
 import { capabilities } from "@/lib/env";
 
 const ITEMS = [
-  { key: "aiGateway", label: "AI scripts and scene images", env: "AI_GATEWAY_API_KEY", required: false },
+  { key: "scriptAi", label: "AI scripts (free tier works)", env: "GEMINI_API_KEY", required: false },
+  { key: "aiGateway", label: "AI scene images", env: "AI_GATEWAY_API_KEY", required: false },
   { key: "elevenlabs", label: "Voiceover (ElevenLabs)", env: "ELEVENLABS_API_KEY", required: true },
   { key: "pexels", label: "Stock footage fallback (Pexels)", env: "PEXELS_API_KEY", required: false },
   { key: "blob", label: "Audio storage (Vercel Blob)", env: "BLOB_STORE_ID", required: true },

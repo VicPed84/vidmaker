@@ -1,7 +1,7 @@
 import "server-only";
-import { createGateway, generateObject } from "ai";
 import { z } from "zod";
-import { capabilities, env } from "@/lib/env";
+import { capabilities } from "@/lib/env";
+import { generateStructured } from "@/features/videos/providers/llm";
 import { TARGET_SECONDS, WORDS_PER_SECOND } from "@/features/videos/scenes";
 
 const generatedScriptSchema = z.object({
@@ -27,14 +27,25 @@ export type GeneratedScript = z.infer<typeof generatedScriptSchema>;
 
 const TARGET_WORDS = Math.round(TARGET_SECONDS * WORDS_PER_SECOND);
 
-export async function generateScript(topic: string): Promise<GeneratedScript> {
-  if (!capabilities.aiGateway) {
-    throw new Error("Script generation is unavailable: AI_GATEWAY_API_KEY is not set.");
-  }
-  const gateway = createGateway({ apiKey: env.AI_GATEWAY_API_KEY });
+// Spelled out in the prompt because providers on plain JSON mode never see
+// the schema or its field descriptions.
+const OUTPUT_FORMAT = [
+  "Respond with a single JSON object and nothing else, shaped exactly like this:",
+  '{"title": string, "description": string, "scenes": [{"narration": string, "visual": string}]}',
+  "title: a YouTube Shorts title under 70 characters, honest, no clickbait lies.",
+  "description: a two-sentence video description followed by 3-5 hashtags including #shorts.",
+  "narration: one or two spoken sentences for the scene.",
+  "visual: a one-sentence image description for the scene covering subject, setting, era, mood and camera angle, specific to the story (e.g. 'Napoleon in a green coat on a muddy field at dusk, dozens of rabbits rushing toward his boots, low angle'). No text or captions in the image.",
+].join("\n");
 
-  const { object } = await generateObject({
-    model: gateway(env.SCRIPT_MODEL),
+export async function generateScript(topic: string): Promise<GeneratedScript> {
+  if (!capabilities.scriptAi) {
+    throw new Error(
+      "Script generation is unavailable: set AI_GATEWAY_API_KEY or a free key such as GEMINI_API_KEY."
+    );
+  }
+
+  const { object } = await generateStructured({
     schema: generatedScriptSchema,
     system: [
       "You write narration for faceless YouTube Shorts in the storytelling niche: surprising facts, history, mysteries and true-crime style stories.",
@@ -43,6 +54,7 @@ export async function generateScript(topic: string): Promise<GeneratedScript> {
       "Write for the ear: short sentences, plain words, no stage directions, no emojis, no hashtags in the narration.",
       "Use only well-documented facts. If a detail is uncertain or disputed, leave it out or say it is disputed. Never invent names, dates, quotes or numbers.",
       "Split the narration into 6-8 scenes; each scene gets one illustration. Describe visuals concretely and keep characters, clothing and era consistent from scene to scene.",
+      OUTPUT_FORMAT,
     ].join("\n"),
     prompt: `Topic: ${topic}`,
   });

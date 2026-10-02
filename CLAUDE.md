@@ -28,6 +28,7 @@ There is no formatter or test runner configured yet. Verify changes with `npm ru
 * `src/features/auth/` — Better Auth server actions and forms. `src/lib/auth.ts` holds the config, `requireUser`, and the owner lock.
 * `src/features/videos/` — the core loop: `actions.ts` (Server Actions), `pipeline.ts` (produce + refresh), `timeline.ts` (scene timing, captions, Shotstack edit), `providers/` (one file per external API).
 * `.github/workflows/prisma-migrations.yml` — writes migration files on GitHub when `schema.prisma` changes (Prisma engine downloads are blocked in some sandboxes). Pull after pushing a schema change.
+* `src/features/videos/providers/llm.ts` — provider-agnostic text generation (`generateStructured`). Tries the providers in `TEXT_PROVIDER_ORDER` (AI Gateway plus free OpenAI-compatible tiers: Gemini, Groq, Cerebras, Mistral, OpenRouter) and falls through on a rate limit or error. The free providers only get JSON mode, so the prompt must describe the JSON shape. Gate script features on `capabilities.scriptAi`; `capabilities.aiGateway` now only means images.
 * `.env.example` — every environment variable the app reads. Keep it in sync with `src/lib/env.ts`.
 
 ## 🔐 Environment & Providers
